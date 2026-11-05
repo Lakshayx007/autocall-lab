@@ -1,0 +1,70 @@
+{
+  "fetched_on": "2026-11-05",
+  "source": "Yahoo Finance via yfinance",
+  "indices": {
+    "S&P 500": "^GSPC",
+    "Euro Stoxx 50": "^STOXX50E",
+    "Nikkei 225": "^N225"
+  },
+  "rate_ticker": "^IRX",
+  "dividend_yields": {
+    "S&P 500": {
+      "etf": "SPY",
+      "etf_name": "State Street SPDR S&P 500 ETF Trust",
+      "yield": 0.01
+    },
+    "Euro Stoxx 50": {
+      "etf": "FEZ",
+      "etf_name": "State Street SPDR EURO STOXX 50 ETF",
+      "yield": 0.028099999
+    },
+    "Nikkei 225": {
+      "etf": "1321.T",
+      "etf_name": "NEXT FUNDS Nikkei 225 Exchange Traded Fund",
+      "yield": 0.0117
+    }
+  },
+  "spx_implied": {
+    "expiry": "2029-12-21",
+    "years": 3.129,
+    "atm_iv": 0.19483153908096656,
+    "quotes": [
+      {
+        "type": "call",
+        "strike": 7700.0,
+        "mid": 1329.15,
+        "iv": 0.19430019618586505
+      },
+      {
+        "type": "call",
+        "strike": 7600.0,
+        "mid": 1384.65,
+        "iv": 0.19587439816509042
+      },
+      {
+        "type": "call",
+        "strike": 7800.0,
+        "mid": 1273.3,
+        "iv": 0.1924313466493776
+      },
+      {
+        "type": "put",
+        "strike": 7700.0,
+        "mid": 688.0,
+        "iv": 0.19536288197606808
+      },
+      {
+        "type": "put",
+        "strike": 7600.0,
+        "mid": 661.45,
+        "iv": 0.19830101826657184
+      },
+      {
+        "type": "put",
+        "strike": 7800.0,
+        "mid": 719.1500000000001,
+        "iv": 0.19319303892965253
+      }
+    ]
+  }
+}

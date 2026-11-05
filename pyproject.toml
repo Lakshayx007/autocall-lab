@@ -1,0 +1,9 @@
+[project]
+name = "autocall"
+version = "0.1.0"
+description = "Pricing and hedging a worst-of autocallable note with Monte Carlo"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
