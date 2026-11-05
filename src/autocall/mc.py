@@ -70,13 +70,18 @@ def _pair_stderr(x: np.ndarray, antithetic: bool) -> float:
 
 
 def price(ts: TermSheet, mkt: Market, n_paths: int = DEFAULT_PATHS, seed: int = DEFAULT_SEED,
-          antithetic: bool = True, z: np.ndarray | None = None) -> PriceResult:
-    """Present value of the note per 100 notional, with Monte Carlo diagnostics. Pass `z` to reuse random numbers
-    (common random numbers make bump-and-reprice sensitivities stable)."""
+          antithetic: bool = True, z: np.ndarray | None = None, spot_rel: np.ndarray | None = None) -> PriceResult:
+    """Present value of the note per 100 notional, with Monte Carlo diagnostics.
+
+    z: reuse random numbers (common random numbers make bump-and-reprice sensitivities stable).
+    spot_rel: today's level of each index relative to its initial fixing (default 1.0, i.e. at issue).
+    """
     times = ts.times
     if z is None:
         z = normals(n_paths, len(times), len(mkt.vol), seed, antithetic)
     perf = performance_paths(mkt, times, z)
+    if spot_rel is not None:
+        perf = perf * np.asarray(spot_rel, float)[None, None, :]
     worst = perf.min(axis=2)
     cf = cashflows(worst, ts)
     df = np.exp(-mkt.rate * times)
@@ -93,8 +98,7 @@ def price(ts: TermSheet, mkt: Market, n_paths: int = DEFAULT_PATHS, seed: int = 
         price=float(pv.mean()), stderr=se, ci95=(float(pv.mean() - 1.96 * se), float(pv.mean() + 1.96 * se)),
         n_paths=n, call_prob=call_prob, maturity_prob=float((~called).mean()), loss_prob=float(lost.mean()),
         expected_life=float(life.mean()), pv_coupons=float(pv_cpn.mean()), pv_redemption=float(pv_red.mean()),
-        expected_coupons=float((cf.coupons > 0).sum(axis=1).mean() if not ts.memory else
-                               (cf.coupons.sum(axis=1) / (ts.coupon_per_period * ts.notional)).mean()),
+        expected_coupons=float(cf.coupon_units.sum(axis=1).mean()),
         loss_given_loss=float(cf.redemption[lost, -1].mean()) if lost.any() else float("nan"),
     )
 

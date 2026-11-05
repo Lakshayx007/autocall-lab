@@ -38,6 +38,7 @@ class TermSheet:
 class Cashflows:
     """Undiscounted cash flows per path and observation date, split by type, plus how each path ended."""
     coupons: np.ndarray        # (paths, n_obs)
+    coupon_units: np.ndarray   # (paths, n_obs): number of coupon periods paid on each date (memory can pay several)
     redemption: np.ndarray     # (paths, n_obs): notional at the call date, or the maturity redemption
     call_index: np.ndarray     # (paths,) observation index of the autocall, -1 if never called
     knocked_in: np.ndarray     # (paths,) True if not called and worst-of < ki barrier at maturity
@@ -48,6 +49,7 @@ def cashflows(worst: np.ndarray, ts: TermSheet) -> Cashflows:
     n_paths, n_obs = worst.shape
     cpn = ts.coupon_per_period * ts.notional
     coupons = np.zeros_like(worst)
+    units = np.zeros_like(worst)
     redemption = np.zeros_like(worst)
     alive = np.ones(n_paths, dtype=bool)
     missed = np.zeros(n_paths)                     # coupons owed under the memory feature
@@ -55,7 +57,8 @@ def cashflows(worst: np.ndarray, ts: TermSheet) -> Cashflows:
     for k in range(n_obs):
         w = worst[:, k]
         pay = alive & (w >= ts.coupon_barrier)
-        coupons[pay, k] = cpn * (1 + (missed[pay] if ts.memory else 0))
+        units[pay, k] = 1 + (missed[pay] if ts.memory else 0)
+        coupons[pay, k] = cpn * units[pay, k]
         missed[pay] = 0
         missed[alive & ~pay] += 1
         called = alive & (w >= ts.autocall_trigger) & (k + 1 >= ts.first_call_obs) & (k < n_obs - 1)
@@ -65,4 +68,4 @@ def cashflows(worst: np.ndarray, ts: TermSheet) -> Cashflows:
     w_T = worst[:, -1]
     knocked_in = alive & (w_T < ts.ki_barrier)
     redemption[alive, -1] = np.where(knocked_in[alive], ts.notional * w_T[alive], ts.notional)
-    return Cashflows(coupons, redemption, call_index, knocked_in)
+    return Cashflows(coupons, units, redemption, call_index, knocked_in)
