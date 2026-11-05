@@ -44,15 +44,20 @@ class Cashflows:
     knocked_in: np.ndarray     # (paths,) True if not called and worst-of < ki barrier at maturity
 
 
-def cashflows(worst: np.ndarray, ts: TermSheet) -> Cashflows:
-    """Apply the note's rules to worst-of performance paths (paths x n_obs, each value = min_i S_i(t) / S_i(0))."""
+def cashflows(worst: np.ndarray, ts: TermSheet, start: int = 0, missed0: np.ndarray | float = 0.0) -> Cashflows:
+    """Apply the note's rules to worst-of performance paths (paths x dates, each value = min_i S_i(t) / S_i(0)).
+
+    By default the paths cover all observation dates. To value the note part-way through its life, pass the remaining
+    dates only, `start` = index of the first remaining date, and `missed0` = coupons already owed under the memory feature.
+    """
     n_paths, n_obs = worst.shape
+    last = ts.n_obs - 1
     cpn = ts.coupon_per_period * ts.notional
     coupons = np.zeros_like(worst)
     units = np.zeros_like(worst)
     redemption = np.zeros_like(worst)
     alive = np.ones(n_paths, dtype=bool)
-    missed = np.zeros(n_paths)                     # coupons owed under the memory feature
+    missed = np.zeros(n_paths) + missed0           # coupons owed under the memory feature
     call_index = np.full(n_paths, -1)
     for k in range(n_obs):
         w = worst[:, k]
@@ -61,7 +66,8 @@ def cashflows(worst: np.ndarray, ts: TermSheet) -> Cashflows:
         coupons[pay, k] = cpn * units[pay, k]
         missed[pay] = 0
         missed[alive & ~pay] += 1
-        called = alive & (w >= ts.autocall_trigger) & (k + 1 >= ts.first_call_obs) & (k < n_obs - 1)
+        g = start + k                              # index of this date in the full schedule
+        called = alive & (w >= ts.autocall_trigger) & (g + 1 >= ts.first_call_obs) & (g < last)
         redemption[called, k] = ts.notional
         call_index[called] = k
         alive &= ~called
